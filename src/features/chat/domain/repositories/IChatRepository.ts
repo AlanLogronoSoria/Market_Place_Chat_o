@@ -7,6 +7,11 @@ export interface IChatRepository {
   createRoom(userId: string, productId: string, productName: string): Promise<Room>;
   
   getMessages(roomId: string): Promise<Message[]>;
-  sendMessage(message: Omit<Message, "id" | "createdAt">): Promise<Message>;
+  sendMessage(
+    roomId: string, 
+    userId: string, 
+    content: string, 
+    imageUrl?: string
+  ): Promise<Message>;
   subscribeToMessages(roomId: string, callback: (message: Message) => void): () => void;
 }

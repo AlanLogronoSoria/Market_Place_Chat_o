@@ -4,11 +4,10 @@ import { Message } from '../../domain/entities/Message';
 import { IChatRepository } from '../../domain/repositories/IChatRepository';
 
 export class SendMessageUseCase {
+    // Nota: Asegúrate de usar el mismo nombre de variable 'chatRepo' 
+    // que definiste en el constructor.
     constructor(private readonly chatRepo: IChatRepository) {}
 
-    /**
-     * Envía un mensaje dentro de una sala de chat validando reglas de negocio esenciales.
-     */
     async execute(
         roomId: string,
         userId: string,
@@ -25,11 +24,6 @@ export class SendMessageUseCase {
             throw new ChatError('El mensaje no puede tener más de 500 caracteres');
         }
 
-        return this.chatRepo.sendMessage({
-            roomId,
-            userId,
-            content: trimmed,
-            imageUrl,
-        });
+        return await this.chatRepo.sendMessage(roomId, userId, trimmed, imageUrl);
     }
 }
