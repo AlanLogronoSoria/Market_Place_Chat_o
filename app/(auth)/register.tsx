@@ -1,11 +1,23 @@
 import { useAuth } from "@features/auth/presentation/hooks/useAuth";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link } from "expo-router";
-import { useState } from "react";
+import {
+  ArrowRight,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  User,
+} from "lucide-react-native";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -17,160 +29,594 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  // NUEVO: Estado para cumplir con el requerimiento de roles
-  const [role, setRole] = useState<'cliente' | 'vendedor'>('cliente');
+  const [role, setRole] = useState<"cliente" | "vendedor">("cliente");
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  
+
   const { register, isLoading, error } = useAuth();
 
+  const roleDescription = useMemo(() => {
+    return role === "cliente"
+      ? "Discover products and connect instantly."
+      : "Sell smarter with real-time conversations.";
+  }, [role]);
+
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.brand}>SkyChat</Text>
-          <Text style={styles.tagline}>PRIVATE MESSAGING</Text>
-        </View>
+    <>
+      <StatusBar barStyle="light-content" />
 
-        <View style={styles.card}>
-          <Text style={styles.titleLight}>Join</Text>
-          <Text style={styles.titleDark}>SkyChat.</Text>
-          <Text style={styles.subtitle}>Your dedication deserves recognition.</Text>
+      <LinearGradient
+        colors={["#070B14", "#0F172A", "#111827"]}
+        style={styles.root}
+      >
+        {/* Ambient Glows */}
+        <View style={styles.glowTop} />
+        <View style={styles.glowBottom} />
 
-          {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <View style={styles.form}>
-            {/* NUEVO: Selector de Rol visual para el Deber 6 */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>SELECCIONA TU ROL</Text>
-              <View style={styles.roleContainer}>
-                <TouchableOpacity 
-                  style={[styles.roleBtn, role === 'cliente' && styles.roleBtnActive]} 
-                  onPress={() => setRole('cliente')}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* HERO */}
+            <View style={styles.hero}>
+              <View style={styles.logoWrapper}>
+                <LinearGradient
+                  colors={["#ef4444", "#dc2626", "#991b1b"]}
+                  style={styles.logoGradient}
                 >
-                  <Text style={[styles.roleText, role === 'cliente' && styles.roleTextActive]}>Cliente</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.roleBtn, role === 'vendedor' && styles.roleBtnActive]} 
-                  onPress={() => setRole('vendedor')}
-                >
-                  <Text style={[styles.roleText, role === 'vendedor' && styles.roleTextActive]}>Vendedor</Text>
-                </TouchableOpacity>
+                  <Sparkles color="#fff" size={20} />
+                </LinearGradient>
               </View>
+
+              <Text style={styles.brand}>ChatNova</Text>
+
+              <Text style={styles.tagline}>
+                NEXT GENERATION MARKETPLACE
+              </Text>
             </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>USERNAME</Text>
-              <TextInput
-                style={[styles.input, focusedField === "username" && styles.inputFocused]}
-                placeholder="no spaces"
-                placeholderTextColor="#9ca3af"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                onFocus={() => setFocusedField("username")}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            {/* CARD */}
+            <BlurView intensity={35} tint="dark" style={styles.card}>
+              <View style={styles.cardBorder} />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>EMAIL</Text>
-              <TextInput
-                style={[styles.input, focusedField === "email" && styles.inputFocused]}
-                placeholder="you@example.com"
-                placeholderTextColor="#9ca3af"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                onFocus={() => setFocusedField("email")}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+              <Text style={styles.titleMuted}>Crea</Text>
+              <Text style={styles.title}>tu cuenta.</Text>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>PASSWORD</Text>
-              <TextInput
-                style={[styles.input, focusedField === "password" && styles.inputFocused]}
-                placeholder="min. 6 characters"
-                placeholderTextColor="#9ca3af"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                onFocus={() => setFocusedField("password")}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+              <Text style={styles.subtitle}>{roleDescription}</Text>
 
-            <TouchableOpacity
-              style={[styles.btnPrimary, isLoading && styles.btnDisabled]}
-              // Enviamos el rol al hook
-              onPress={() => register({ email, password, username, role })}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.btnPrimaryText}>Create Account</Text>
+              {error && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
               )}
-            </TouchableOpacity>
 
-            {/* CORREGIDO: Uso correcto de Link con asChild */}
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.7}>
-                <Text style={styles.btnSecondaryText}>Already have an account</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              {/* ROLE SELECTOR */}
+              <View style={styles.section}>
+                <Text style={styles.label}>SELECCIONA TU TIPO DE CUENTA</Text>
+
+                <View style={styles.roleContainer}>
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    style={[
+                      styles.roleCard,
+                      role === "cliente" && styles.roleCardActive,
+                    ]}
+                    onPress={() => setRole("cliente")}
+                  >
+                    <View
+                      style={[
+                        styles.roleIcon,
+                        role === "cliente" && styles.roleIconActive,
+                      ]}
+                    >
+                      <User
+                        size={18}
+                        color={role === "cliente" ? "#ffffff" : "#9ca3af"}
+                      />
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.roleTitle,
+                        role === "cliente" && styles.roleTitleActive,
+                      ]}
+                    >
+                      Cliente
+                    </Text>
+
+                    <Text style={styles.roleSubtitle}>
+                      Compra y Chatea en tiempo real
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    style={[
+                      styles.roleCard,
+                      role === "vendedor" && styles.roleCardActiveRed,
+                    ]}
+                    onPress={() => setRole("vendedor")}
+                  >
+                    <View
+                      style={[
+                        styles.roleIcon,
+                        role === "vendedor" && styles.roleIconActiveRed,
+                      ]}
+                    >
+                      <Store
+                        size={18}
+                        color={role === "vendedor" ? "#ffffff" : "#9ca3af"}
+                      />
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.roleTitle,
+                        role === "vendedor" && styles.roleTitleActive,
+                      ]}
+                    >
+                      Vendedor
+                    </Text>
+
+                    <Text style={styles.roleSubtitle}>
+                      Maneja tu Marketplace
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* FORM */}
+              <View style={styles.form}>
+                {/* USERNAME */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>USERNAME</Text>
+
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedField === "username" &&
+                        styles.inputWrapperFocused,
+                    ]}
+                  >
+                    <User size={18} color="#9ca3af" />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="your_username"
+                      placeholderTextColor="#6b7280"
+                      value={username}
+                      onChangeText={setUsername}
+                      autoCapitalize="none"
+                      onFocus={() => setFocusedField("username")}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
+                </View>
+
+                {/* EMAIL */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>EMAIL ADDRESS</Text>
+
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedField === "email" &&
+                        styles.inputWrapperFocused,
+                    ]}
+                  >
+                    <Mail size={18} color="#9ca3af" />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="you@example.com"
+                      placeholderTextColor="#6b7280"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      onFocus={() => setFocusedField("email")}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
+                </View>
+
+                {/* PASSWORD */}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>PASSWORD</Text>
+
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      focusedField === "password" &&
+                        styles.inputWrapperFocused,
+                    ]}
+                  >
+                    <Lock size={18} color="#9ca3af" />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Minimum 6 characters"
+                      placeholderTextColor="#6b7280"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      onFocus={() => setFocusedField("password")}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
+                </View>
+
+                {/* SECURITY INFO */}
+                <View style={styles.securityBox}>
+                  <ShieldCheck size={16} color="#22c55e" />
+
+                  <Text style={styles.securityText}>
+                    Encrypted authentication and secure access.
+                  </Text>
+                </View>
+
+                {/* REGISTER BUTTON */}
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  style={[
+                    styles.primaryButton,
+                    isLoading && styles.buttonDisabled,
+                  ]}
+                  onPress={() =>
+                    register({
+                      email: email.trim(),
+                      password,
+                      username: username.trim(),
+                      role,
+                    })
+                  }
+                  disabled={isLoading}
+                >
+                  <LinearGradient
+                    colors={
+                      role === "vendedor"
+                        ? ["#ef4444", "#dc2626", "#991b1b"]
+                        : ["#2563eb", "#1d4ed8", "#1e3a8a"]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.primaryGradient}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryButtonText}>
+                          Create Account
+                        </Text>
+
+                        <ArrowRight color="#fff" size={18} />
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* LOGIN BUTTON */}
+                <Link href="/(auth)/login" asChild>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.secondaryButton}
+                  >
+                    <Text style={styles.secondaryButtonText}>
+                      Already have an account
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            </BlurView>
+
+            <Text style={styles.footer}>
+              SECURE · REALTIME · MARKETPLACE
+            </Text>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </>
   );
 }
 
-// ==========================================
-// ESTILOS
-// ==========================================
-const DARK = "#202A36";
-const GRAY_MID = "#6b7280";
-const GRAY_LIGHT = "#f3f4f6";
-const GRAY_300 = "#d1d5db";
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: GRAY_LIGHT },
-  scroll: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 48 },
-  header: { alignItems: "center", marginBottom: 36 },
-  brand: { fontSize: 28, fontWeight: "600", color: DARK, letterSpacing: -0.5 },
-  tagline: { fontSize: 11, fontWeight: "600", color: GRAY_MID, letterSpacing: 3, marginTop: 4 },
-  card: { backgroundColor: "#fff", borderRadius: 24, padding: 32, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 6 },
-  titleLight: { fontSize: 42, fontWeight: "400", color: "#9ca3af", letterSpacing: -1.5, lineHeight: 44 },
-  titleDark: { fontSize: 42, fontWeight: "600", color: DARK, letterSpacing: -1.5, lineHeight: 44, marginTop: -6 },
-  subtitle: { fontSize: 15, color: GRAY_MID, marginTop: 8, marginBottom: 28 },
-  errorBox: { backgroundColor: "#fef2f2", borderRadius: 10, padding: 12, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: "#ef4444" },
-  errorText: { color: "#dc2626", fontSize: 13 },
-  form: { gap: 16 },
-  fieldGroup: { gap: 6 },
-  label: { fontSize: 10, fontWeight: "600", color: GRAY_MID, letterSpacing: 2 },
-  
-  // Estilos del selector de roles
-  roleContainer: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  roleBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: GRAY_300, alignItems: 'center' },
-  roleBtnActive: { borderColor: DARK, backgroundColor: DARK },
-  roleText: { color: GRAY_MID, fontWeight: '600' },
-  roleTextActive: { color: '#fff' },
+  root: {
+    flex: 1,
+    backgroundColor: "#070B14",
+  },
 
-  input: { borderWidth: 1.5, borderColor: GRAY_300, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: DARK, backgroundColor: "#fafafa" },
-  inputFocused: { borderColor: DARK, backgroundColor: "#fff" },
-  btnPrimary: { backgroundColor: DARK, borderRadius: 100, paddingVertical: 16, alignItems: "center", marginTop: 8 },
-  btnDisabled: { opacity: 0.6 },
-  btnPrimaryText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-  btnSecondary: { borderRadius: 100, paddingVertical: 14, alignItems: "center", backgroundColor: GRAY_300 },
-  btnSecondaryText: { color: "#374151", fontWeight: "500", fontSize: 15 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 60,
+  },
+
+  glowTop: {
+    position: "absolute",
+    top: -120,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    backgroundColor: "rgba(239,68,68,0.18)",
+  },
+
+  glowBottom: {
+    position: "absolute",
+    bottom: -100,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 240,
+    backgroundColor: "rgba(37,99,235,0.18)",
+  },
+
+  hero: {
+    alignItems: "center",
+    marginBottom: 28,
+  },
+
+  logoWrapper: {
+    marginBottom: 16,
+  },
+
+  logoGradient: {
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  brand: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#ffffff",
+    letterSpacing: -1,
+  },
+
+  tagline: {
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 4,
+    color: "#6b7280",
+  },
+
+  card: {
+    overflow: "hidden",
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(15,23,42,0.72)",
+    padding: 28,
+  },
+
+  cardBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+
+  titleMuted: {
+    fontSize: 44,
+    color: "#6b7280",
+    fontWeight: "300",
+    letterSpacing: -2,
+    lineHeight: 46,
+  },
+
+  title: {
+    fontSize: 44,
+    color: "#ffffff",
+    fontWeight: "800",
+    letterSpacing: -2,
+    lineHeight: 46,
+    marginTop: -4,
+  },
+
+  subtitle: {
+    color: "#94a3b8",
+    fontSize: 15,
+    marginTop: 12,
+    marginBottom: 28,
+    lineHeight: 24,
+  },
+
+  errorBox: {
+    backgroundColor: "rgba(239,68,68,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.3)",
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+
+  errorText: {
+    color: "#fca5a5",
+    fontSize: 13,
+  },
+
+  section: {
+    marginBottom: 24,
+  },
+
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 2,
+    color: "#94a3b8",
+    marginBottom: 12,
+  },
+
+  roleContainer: {
+    flexDirection: "row",
+    gap: 14,
+  },
+
+  roleCard: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 22,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+  },
+
+  roleCardActive: {
+    borderColor: "rgba(59,130,246,0.55)",
+    backgroundColor: "rgba(37,99,235,0.12)",
+  },
+
+  roleCardActiveRed: {
+    borderColor: "rgba(239,68,68,0.55)",
+    backgroundColor: "rgba(239,68,68,0.12)",
+  },
+
+  roleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+
+  roleIconActive: {
+    backgroundColor: "#2563eb",
+  },
+
+  roleIconActiveRed: {
+    backgroundColor: "#dc2626",
+  },
+
+  roleTitle: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  roleTitleActive: {
+    color: "#ffffff",
+  },
+
+  roleSubtitle: {
+    color: "#94a3b8",
+    fontSize: 12,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+
+  form: {
+    gap: 18,
+  },
+
+  fieldGroup: {
+    gap: 8,
+  },
+
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+  },
+
+  inputWrapperFocused: {
+    borderColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+
+  input: {
+    flex: 1,
+    color: "#ffffff",
+    paddingVertical: 16,
+    fontSize: 15,
+  },
+
+  securityBox: {
+    marginTop: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(34,197,94,0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.15)",
+    padding: 14,
+  },
+
+  securityText: {
+    color: "#bbf7d0",
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  primaryButton: {
+    marginTop: 10,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+
+  primaryGradient: {
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  primaryButtonText: {
+    color: "#ffffff",
+    fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
+
+  secondaryButton: {
+    marginTop: 2,
+    paddingVertical: 16,
+    borderRadius: 18,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+
+  secondaryButtonText: {
+    color: "#cbd5e1",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  footer: {
+    textAlign: "center",
+    marginTop: 28,
+    color: "#64748b",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 3,
+  },
 });

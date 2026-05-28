@@ -1,7 +1,7 @@
+import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from './client';
-import { decode } from 'base64-arraybuffer';
 
 export async function pickAndUploadImage(): Promise<string | null> {
   // Pedir permiso a la galería
@@ -28,7 +28,7 @@ export async function pickAndUploadImage(): Promise<string | null> {
   } else if (asset.uri) {
     // Fallback: leer desde el sistema de archivos
     base64 = await FileSystem.readAsStringAsync(asset.uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: FileSystemEncodingType.Base64,
     });
   } else {
     throw new Error('No se pudo obtener la imagen');

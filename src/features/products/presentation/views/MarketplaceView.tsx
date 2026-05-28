@@ -1,52 +1,80 @@
 import { useAuthStore } from "@features/auth/presentation/store/authStore";
 import { useRooms } from "@features/chat/presentation/hooks/useRooms";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import {
+  MessageCircleMore,
+  ShieldCheck,
+  Sparkles,
+  Store,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useProducts } from "../hooks/useProducts";
 
-// Constantes estéticas alineadas a SkyChat
-const DARK = "#202A36";
-const GRAY_MID = "#6b7280";
-const GRAY_LIGHT = "#f3f4f6";
-const GRAY_300 = "#d1d5db";
-const SUCCESS = "#10b981";
+// ==============================
+// SKYCHAT NEXT UI
+// ==============================
+const BG_DARK = "#070B14";
+const BG_MID = "#0F172A";
+const CARD_BG = "rgba(255,255,255,0.05)";
+const BORDER = "rgba(255,255,255,0.08)";
+const TEXT = "#F8FAFC";
+const TEXT_SOFT = "#94A3B8";
+const RED = "#EF4444";
+const RED_DARK = "#991B1B";
 
 export function MarketplaceView() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const { products, isLoading, createProduct, isCreating } = useProducts();
-  const { createRoom } = useRooms(); // Hook para inicializar chats desde el cliente
 
-  // Estados locales para el formulario de creación
+  const { products, isLoading, createProduct, isCreating } =
+    useProducts();
+
+  const { createRoom } = useRooms();
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(
+    null
+  );
 
-  const isVendedor = user?.role?.toLowerCase().trim() === "vendedor";
+  const [focusedField, setFocusedField] =
+    useState<string | null>(null);
 
-  // Manejador para publicar el producto (Vendedor)
+  const isVendedor =
+    user?.role?.toLowerCase().trim() === "vendedor";
+
+  // ==============================
+  // PUBLICAR PRODUCTO
+  // ==============================
   const handlePublish = async () => {
     setFormError(null);
+
     if (!name.trim() || !price.trim()) {
-      setFormError("El nombre y el precio son obligatorios.");
+      setFormError(
+        "El nombre y el precio son obligatorios."
+      );
       return;
     }
 
     const parsedPrice = parseFloat(price);
+
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setFormError("Ingresa un precio numérico válido y mayor a 0.");
+      setFormError("Ingresa un precio válido.");
       return;
     }
 
@@ -56,226 +84,735 @@ export function MarketplaceView() {
         description: description.trim(),
         price: parsedPrice,
       });
-      
-      // Limpiar formulario tras éxito
+
       setName("");
       setDescription("");
       setPrice("");
     } catch (err: any) {
-      setFormError(err?.message || "No se pudo crear el producto.");
+      setFormError(
+        err?.message ||
+          "No se pudo publicar el producto."
+      );
     }
   };
 
-  // Manejador para iniciar chat sobre un producto (Cliente)
-  const handleContactSeller = async (productId: string, productName: string) => {
+  // ==============================
+  // CHAT
+  // ==============================
+  const handleContactSeller = async (
+    productId: string,
+    productName: string
+  ) => {
     try {
-      // Crea o recupera la sala en Supabase pasándole el producto consultado
-      const room = await createRoom({ productId, productName });
+      const room = await createRoom({
+        productId,
+        productName,
+      });
+
       if (room?.id) {
         router.push(`/chat/${room.id}`);
       }
     } catch (err) {
-      console.error("Error al abrir chat de negociación:", err);
+      console.error("Error al abrir chat:", err);
     }
   };
 
+  // ==============================
+  // PRODUCT CARD
+  // ==============================
   const renderProduct = ({ item }: { item: any }) => (
-    <View style={styles.productCard}>
-      <View style={styles.productMain}>
-        <View style={styles.productInfo}>
-          <Text style={styles.productName}>{item.name}</Text>
-          {item.description ? (
-            <Text style={styles.productDescription}>{item.description}</Text>
-          ) : null}
-        </View>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+    <BlurView
+      intensity={35}
+      tint="dark"
+      style={styles.productCard}
+    >
+      {/* Glow */}
+      <View style={styles.cardGlow} />
+
+      {/* Top */}
+      <View style={styles.productTop}>
+        <LinearGradient
+          colors={[RED, RED_DARK]}
+          style={styles.productBadge}
+        >
+          <Store size={12} color="#fff" />
+
+          <Text style={styles.productBadgeText}>
+            PRODUCT
+          </Text>
+        </LinearGradient>
+
+        <Text style={styles.productPrice}>
+          ${item.price.toFixed(2)}
+        </Text>
       </View>
 
-      {/* Si el usuario ingresó como CLIENTE, puede simular preguntas */}
+      {/* Name */}
+      <Text style={styles.productName}>
+        {item.name}
+      </Text>
+
+      {/* Description */}
+      {!!item.description && (
+        <Text style={styles.productDescription}>
+          {item.description}
+        </Text>
+      )}
+
+      {/* Button */}
       {!isVendedor && (
         <TouchableOpacity
           style={styles.btnContact}
-          onPress={() => handleContactSeller(item.id, item.name)}
-          activeOpacity={0.8}
+          onPress={() =>
+            handleContactSeller(item.id, item.name)
+          }
+          activeOpacity={0.85}
         >
-          <Text style={styles.btnContactText}>Preguntar por este producto</Text>
+          <LinearGradient
+            colors={[RED, "#DC2626"]}
+            style={styles.contactGradient}
+          >
+            <MessageCircleMore
+              size={18}
+              color="#fff"
+            />
+
+            <Text style={styles.btnContactText}>
+              Secure Chat
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       )}
-    </View>
+    </BlurView>
   );
 
+  // ==============================
+  // LOADING
+  // ==============================
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={DARK} />
-        <Text style={styles.loadingText}>Cargando catálogo...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color={RED}
+        />
+
+        <Text style={styles.loadingText}>
+          Loading marketplace...
+        </Text>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      {/* HEADER EXCLUSIVO PARA EL FORMULARIO DEL VENDEDOR */}
-      {isVendedor && (
-        <View style={styles.formContainer}>
-          <Text style={styles.formTitle}>AÑADIR NUEVO PRODUCTO</Text>
-          
-          {formError && <Text style={styles.errorText}>{formError}</Text>}
+    <>
+      <StatusBar barStyle="light-content" />
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre del producto (ej: Laptop Asus)"
-              placeholderTextColor="#9ca3af"
-              value={name}
-              onChangeText={setName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Descripción breve"
-              placeholderTextColor="#9ca3af"
-              value={description}
-              onChangeText={setDescription}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Precio ($)"
-              placeholderTextColor="#9ca3af"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="numeric"
-            />
+      <LinearGradient
+        colors={[BG_DARK, BG_MID, "#111827"]}
+        style={styles.container}
+      >
+        {/* Ambient Lights */}
+        <View style={styles.glowTop} />
+        <View style={styles.glowBottom} />
 
-            <TouchableOpacity
-              style={[styles.btnSubmit, isCreating && styles.btnDisabled]}
-              onPress={handlePublish}
-              disabled={isCreating}
-            >
-              {isCreating ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.btnSubmitText}>Publicar en Marketplace</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+          }
+        >
+          <FlatList
+            data={products}
+            keyExtractor={(p) => p.id}
+            renderItem={renderProduct}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scroll}
+            ItemSeparatorComponent={() => (
+              <View style={{ height: 16 }} />
+            )}
+            ListHeaderComponent={
+              <>
+                {/* ========================= */}
+                {/* HERO */}
+                {/* ========================= */}
+                <View style={styles.hero}>
+                  <View>
+                    <Text style={styles.heroTitle}>
+                      Marketplace
+                    </Text>
 
-      {/* SUBHEADER DEL CATÁLOGO */}
-      <View style={styles.subheader}>
-        <Text style={styles.subheaderLabel}>CATÁLOGO DE PRODUCTOS</Text>
-        <Text style={styles.subheaderCount}>{products.length}</Text>
-      </View>
+                    <View style={styles.statusRow}>
+                      <ShieldCheck
+                        size={14}
+                        color="#22c55e"
+                      />
 
-      {/* LISTADO DE PRODUCTOS */}
-      <FlatList
-        data={products}
-        keyExtractor={(p) => p.id}
-        renderItem={renderProduct}
-        contentContainerStyle={products.length === 0 ? { flex: 1 } : { paddingBottom: 40 }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text style={styles.emptyIcon}>📦</Text>
-            <Text style={styles.emptyTitle}>Marketplace Vacío</Text>
-            <Text style={styles.emptySubtitle}>
-              No hay productos registrados en este momento.
-            </Text>
-          </View>
-        }
-      />
-    </KeyboardAvoidingView>
+                      <Text style={styles.statusText}>
+                        Secure encrypted commerce
+                      </Text>
+                    </View>
+                  </View>
+
+                  <LinearGradient
+                    colors={[RED, RED_DARK]}
+                    style={styles.heroBadge}
+                  >
+                    <Sparkles
+                      size={16}
+                      color="#fff"
+                    />
+
+                    <Text style={styles.heroBadgeText}>
+                      {products.length}
+                    </Text>
+                  </LinearGradient>
+                </View>
+
+                {/* ========================= */}
+                {/* FORM VENDEDOR */}
+                {/* ========================= */}
+                {isVendedor && (
+                  <BlurView
+                    intensity={40}
+                    tint="dark"
+                    style={styles.card}
+                  >
+                    <View style={styles.cardGlowBig} />
+
+                    <Text style={styles.titleLight}>
+                      Publish
+                    </Text>
+
+                    <Text style={styles.titleDark}>
+                      Product.
+                    </Text>
+
+                    <Text style={styles.subtitle}>
+                      Share your products with
+                      clients securely.
+                    </Text>
+
+                    {formError && (
+                      <View style={styles.errorBox}>
+                        <Text
+                          style={styles.errorText}
+                        >
+                          {formError}
+                        </Text>
+                      </View>
+                    )}
+
+                    <View style={styles.form}>
+                      {/* NAME */}
+                      <View
+                        style={styles.fieldGroup}
+                      >
+                        <Text style={styles.label}>
+                          PRODUCT NAME
+                        </Text>
+
+                        <TextInput
+                          style={[
+                            styles.input,
+                            focusedField ===
+                              "name" &&
+                              styles.inputFocused,
+                          ]}
+                          placeholder="Gaming Laptop"
+                          placeholderTextColor="#64748b"
+                          value={name}
+                          onChangeText={setName}
+                          onFocus={() =>
+                            setFocusedField(
+                              "name"
+                            )
+                          }
+                          onBlur={() =>
+                            setFocusedField(
+                              null
+                            )
+                          }
+                        />
+                      </View>
+
+                      {/* DESCRIPTION */}
+                      <View
+                        style={styles.fieldGroup}
+                      >
+                        <Text style={styles.label}>
+                          DESCRIPTION
+                        </Text>
+
+                        <TextInput
+                          style={[
+                            styles.input,
+                            styles.textArea,
+                            focusedField ===
+                              "description" &&
+                              styles.inputFocused,
+                          ]}
+                          placeholder="Describe your product..."
+                          placeholderTextColor="#64748b"
+                          multiline
+                          value={description}
+                          onChangeText={
+                            setDescription
+                          }
+                          onFocus={() =>
+                            setFocusedField(
+                              "description"
+                            )
+                          }
+                          onBlur={() =>
+                            setFocusedField(
+                              null
+                            )
+                          }
+                        />
+                      </View>
+
+                      {/* PRICE */}
+                      <View
+                        style={styles.fieldGroup}
+                      >
+                        <Text style={styles.label}>
+                          PRICE
+                        </Text>
+
+                        <TextInput
+                          style={[
+                            styles.input,
+                            focusedField ===
+                              "price" &&
+                              styles.inputFocused,
+                          ]}
+                          placeholder="$0.00"
+                          placeholderTextColor="#64748b"
+                          keyboardType="numeric"
+                          value={price}
+                          onChangeText={setPrice}
+                          onFocus={() =>
+                            setFocusedField(
+                              "price"
+                            )
+                          }
+                          onBlur={() =>
+                            setFocusedField(
+                              null
+                            )
+                          }
+                        />
+                      </View>
+
+                      {/* BUTTON */}
+                      <TouchableOpacity
+                        style={[
+                          styles.btnPrimary,
+                          isCreating &&
+                            styles.btnDisabled,
+                        ]}
+                        onPress={handlePublish}
+                        disabled={isCreating}
+                        activeOpacity={0.85}
+                      >
+                        <LinearGradient
+                          colors={[
+                            RED,
+                            "#DC2626",
+                          ]}
+                          style={
+                            styles.primaryGradient
+                          }
+                        >
+                          {isCreating ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text
+                              style={
+                                styles.btnPrimaryText
+                              }
+                            >
+                              Publish Product
+                            </Text>
+                          )}
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </View>
+                  </BlurView>
+                )}
+              </>
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyIcon}>
+                  📦
+                </Text>
+
+                <Text style={styles.emptyTitle}>
+                  Marketplace vacío
+                </Text>
+
+                <Text
+                  style={styles.emptySubtitle}
+                >
+                  No hay productos disponibles.
+                </Text>
+              </View>
+            }
+          />
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </>
   );
 }
 
+// ======================================
+// STYLES
+// ======================================
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: GRAY_LIGHT },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", gap: 8 },
-  loadingText: { color: GRAY_MID, fontSize: 14 },
-  
-  // Estilos del Subheader
-  subheader: {
+  container: {
+    flex: 1,
+    backgroundColor: BG_DARK,
+  },
+
+  glowTop: {
+    position: "absolute",
+    top: -120,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    backgroundColor:
+      "rgba(239,68,68,0.18)",
+  },
+
+  glowBottom: {
+    position: "absolute",
+    bottom: -120,
+    left: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    backgroundColor:
+      "rgba(59,130,246,0.18)",
+  },
+
+  scroll: {
+    paddingHorizontal: 18,
+    paddingTop: 70,
+    paddingBottom: 40,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: BG_DARK,
+  },
+
+  loadingText: {
+    marginTop: 14,
+    color: TEXT_SOFT,
+    fontSize: 14,
+  },
+
+  // =========================
+  // HERO
+  // =========================
+  hero: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 28,
+  },
+
+  heroTitle: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: TEXT,
+    letterSpacing: -1.5,
+  },
+
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+  },
+
+  statusText: {
+    color: TEXT_SOFT,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+
+  heroBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  heroBadgeText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  // =========================
+  // CARD
+  // =========================
+  card: {
+    borderRadius: 30,
+    overflow: "hidden",
+    padding: 24,
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: BORDER,
+    marginBottom: 28,
+  },
+
+  cardGlowBig: {
+    position: "absolute",
+    top: -70,
+    right: -70,
+    width: 180,
+    height: 180,
+    borderRadius: 180,
+    backgroundColor:
+      "rgba(239,68,68,0.15)",
+  },
+
+  titleLight: {
+    fontSize: 46,
+    fontWeight: "300",
+    color: "#64748B",
+    letterSpacing: -2,
+    lineHeight: 48,
+  },
+
+  titleDark: {
+    fontSize: 46,
+    fontWeight: "800",
+    color: TEXT,
+    letterSpacing: -2,
+    lineHeight: 48,
+    marginTop: -6,
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: TEXT_SOFT,
+    marginTop: 10,
+    marginBottom: 28,
+    lineHeight: 24,
+  },
+
+  // =========================
+  // ERROR
+  // =========================
+  errorBox: {
+    backgroundColor:
+      "rgba(220,38,38,0.12)",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor:
+      "rgba(239,68,68,0.18)",
+  },
+
+  errorText: {
+    color: "#FCA5A5",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+
+  // =========================
+  // FORM
+  // =========================
+  form: {
+    gap: 18,
+  },
+
+  fieldGroup: {
+    gap: 8,
+  },
+
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: TEXT_SOFT,
+    letterSpacing: 2,
+    marginLeft: 4,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: TEXT,
+    backgroundColor:
+      "rgba(255,255,255,0.05)",
+  },
+
+  inputFocused: {
+    borderColor:
+      "rgba(239,68,68,0.55)",
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+  },
+
+  textArea: {
+    minHeight: 120,
+    textAlignVertical: "top",
+  },
+
+  btnPrimary: {
+    borderRadius: 22,
+    overflow: "hidden",
+    marginTop: 8,
+  },
+
+  primaryGradient: {
+    paddingVertical: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  btnDisabled: {
+    opacity: 0.6,
+  },
+
+  btnPrimaryText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+    letterSpacing: 0.4,
+  },
+
+  // =========================
+  // PRODUCT CARD
+  // =========================
+  productCard: {
+    borderRadius: 28,
+    overflow: "hidden",
+    padding: 22,
+    backgroundColor: CARD_BG,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+
+  cardGlow: {
+    position: "absolute",
+    bottom: -50,
+    right: -50,
+    width: 140,
+    height: 140,
+    borderRadius: 140,
+    backgroundColor:
+      "rgba(59,130,246,0.12)",
+  },
+
+  productTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: GRAY_300,
+    marginBottom: 18,
   },
-  subheaderLabel: { fontSize: 10, fontWeight: "600", color: GRAY_MID, letterSpacing: 2 },
-  subheaderCount: {
-    fontSize: 12,
-    fontWeight: "600",
+
+  productBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+
+  productBadgeText: {
     color: "#fff",
-    backgroundColor: DARK,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 100,
-    overflow: "hidden",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
   },
 
-  // Estilos Formulario Creación
-  formContainer: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: GRAY_300,
+  productPrice: {
+    color: TEXT,
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -1,
   },
-  formTitle: { fontSize: 11, fontWeight: "700", color: DARK, letterSpacing: 1.5, marginBottom: 12 },
-  form: { gap: 10 },
-  input: {
-    borderWidth: 1.5,
-    borderColor: GRAY_300,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+
+  productName: {
+    color: TEXT,
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 10,
+    letterSpacing: -1,
+  },
+
+  productDescription: {
+    color: TEXT_SOFT,
     fontSize: 14,
-    color: DARK,
-    backgroundColor: "#fafafa",
+    lineHeight: 24,
   },
-  btnSubmit: {
-    backgroundColor: SUCCESS,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnSubmitText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  errorText: { color: "#dc2626", fontSize: 12, marginBottom: 8, fontWeight: "500" },
 
-  // Estilos de las Tarjetas de Producto
-  productCard: {
-    backgroundColor: "#fff",
-    padding: 20,
-    gap: 12,
-  },
-  productMain: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  productInfo: { flex: 1, paddingRight: 16 },
-  productName: { fontSize: 16, fontWeight: "600", color: DARK },
-  productDescription: { fontSize: 13, color: GRAY_MID, marginTop: 4, lineHeight: 18 },
-  productPrice: { fontSize: 18, fontWeight: "700", color: DARK },
-  
-  // Botón para que el Cliente pregunte
   btnContact: {
-    borderWidth: 1.5,
-    borderColor: DARK,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-    backgroundColor: "#fff",
+    borderRadius: 18,
+    overflow: "hidden",
+    marginTop: 24,
   },
-  btnContactText: { color: DARK, fontWeight: "600", fontSize: 13 },
-  
-  separator: { height: 8, backgroundColor: GRAY_LIGHT },
-  
-  // Lista Vacía
-  emptyIcon: { fontSize: 40, marginBottom: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: "600", color: DARK },
-  emptySubtitle: { fontSize: 13, color: GRAY_MID, textAlign: "center", paddingHorizontal: 40 },
+
+  contactGradient: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 16,
+  },
+
+  btnContactText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 0.3,
+  },
+
+  // =========================
+  // EMPTY
+  // =========================
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+
+  emptyIcon: {
+    fontSize: 52,
+    marginBottom: 16,
+  },
+
+  emptyTitle: {
+    color: TEXT,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+
+  emptySubtitle: {
+    color: TEXT_SOFT,
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 24,
+    paddingHorizontal: 30,
+  },
 });

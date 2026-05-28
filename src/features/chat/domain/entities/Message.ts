@@ -1,11 +1,11 @@
 export interface Message {
   id: string;
   roomId: string;
-  userId: string;          // <--- Tu entidad original usa 'userId'
+  userId: string;     
   content: string;
-  imageUrl?: string;       // Opcional por si envía imágenes
-  createdAt: Date;         // O string, dependiendo de cómo manejes las fechas
-  authorUsername?: string; // Nombre del usuario que escribió el mensaje
+  imageUrl?: string;    
+  createdAt: Date;       
+  authorUsername?: string; 
 }
 
 export interface Room{

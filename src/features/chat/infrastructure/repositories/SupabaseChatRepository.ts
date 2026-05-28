@@ -5,9 +5,6 @@ import { IChatRepository } from '../../domain/repositories/IChatRepository';
 
 export class SupabaseChatRepository implements IChatRepository {
     
-    /**
-     * Obtiene el historial de mensajes de una sala específica
-     */
 async getMessages(roomId: string): Promise<Message[]> {
         const { data, error } = await supabase
             .from('messages')
@@ -28,9 +25,7 @@ async getMessages(roomId: string): Promise<Message[]> {
         }));
     }
 
-    /**
-     * Envía un mensaje de texto o imagen a una sala de chat
-     */
+
    async sendMessage(message: Omit<Message, "id" | "createdAt">): Promise<Message> {
         const { data, error } = await supabase
             .from('messages')
@@ -56,49 +51,42 @@ async getMessages(roomId: string): Promise<Message[]> {
         };
     }
 
-   // src/features/chat/infrastructure/repositories/SupabaseChatRepository.ts
+
 
 subscribeToMessages(roomId: string, onNewMessage: (message: any) => void) {
-  // 1. Crear la referencia del canal
+
   const channelId = `room-${roomId}`;
   
   const channel = supabase
     .channel(channelId)
-    // 2. CONFIGURAR PRIMERO: Escuchar los cambios de la base de datos
+
     .on(
       'postgres_changes',
       {
-        event: 'INSERT', // Escucha solo nuevos mensajes creados
+        event: 'INSERT', 
         schema: 'public',
-        table: 'messages', // Verifica si tu tabla se llama 'messages' o 'mensajes'
-        filter: `room_id=eq.${roomId}`, // Filtra para recibir solo los de esta sala
+        table: 'messages',
+        filter: `room_id=eq.${roomId}`, 
       },
       (payload) => {
-        // Ejecuta el callback con el nuevo registro inyectado
+
         onNewMessage(payload.new);
       }
     );
 
-  // 3. SUSCRIBIRSE AL FINAL: Una vez mapeados todos los listeners
+
   channel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
       console.log(`🟢 Conectado con éxito al tiempo real de la sala: ${roomId}`);
     }
   });
 
-  // 4. RETORNAR LIMPIEZA: Retorna la función que remueve este canal específico
   return () => {
     console.log(`🔴 Removiendo canal de tiempo real: ${channelId}`);
     supabase.removeChannel(channel);
   };
 }
 
-    /**
-     * Obtiene las salas según el rol y el usuario autenticado
-     */
-   /**
-     * Obtiene las salas según el rol y el usuario autenticado
-     */
     async getRooms(userId: string, role: string): Promise<Room[]> {
         const normalizedRole = role?.toLowerCase().trim();
 
@@ -154,9 +142,6 @@ subscribeToMessages(roomId: string, onNewMessage: (message: any) => void) {
         }
     }
 
-    /**
-     * Crea una nueva sala vinculada a un producto o devuelve una existente
-     */
     async createRoom(userId: string, productId: string, productName: string): Promise<Room> {
         const { data: existingRoom } = await supabase
             .from('rooms')

@@ -17,7 +17,6 @@ export class SendMessageUseCase {
     ): Promise<Message> {
         const trimmed = content.trim();
 
-        // ✅ Válido si hay texto O imagen
         if (!trimmed && !imageUrl) {
             throw new ChatError('El mensaje no puede estar vacío');
         }
@@ -26,8 +25,6 @@ export class SendMessageUseCase {
             throw new ChatError('El mensaje no puede tener más de 500 caracteres');
         }
 
-        // 💡 CORREGIDO: Ahora se envía como un único objeto estructurado (Omit<Message, "id" | "createdAt">)
-        // Pasando además el 'imageUrl' que se estaba omitiendo en tu código previo.
         return this.chatRepo.sendMessage({
             roomId,
             userId,

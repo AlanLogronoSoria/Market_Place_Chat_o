@@ -2,236 +2,712 @@ import { useAuthStore } from "@features/auth/presentation/store/authStore";
 import { Room } from "@features/chat/domain/entities/Room";
 import { useRooms } from "@features/chat/presentation/hooks/useRooms";
 import { MarketplaceView } from "@features/products/presentation/views/MarketplaceView";
+
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+
 import React, { useState } from "react";
+
 import {
   ActivityIndicator,
   FlatList,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
-// Paleta de colores unificada de SkyChat
-const DARK = "#202A36";
-const GRAY_MID = "#6b7280";
-const GRAY_LIGHT = "#f3f4f6";
-const GRAY_300 = "#d1d5db";
+import {
+  MessageCircle,
+  Package,
+  ShieldCheck
+} from "lucide-react-native";
 
 export default function AppIndexScreen() {
   const router = useRouter();
+
   const user = useAuthStore((s) => s.user);
+
   const { rooms, isLoading } = useRooms();
 
-  // 💡 ESTADO LOCAL: Permite al vendedor alternar entre revisar chats y subir productos
-  const [vendedorTab, setVendedorTab] = useState<"chats" | "productos">("chats");
+  const [vendedorTab, setVendedorTab] = useState<
+    "chats" | "productos"
+  >("chats");
+
+  // =====================================
+  // LOADING USER
+  // =====================================
 
   if (!user) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={DARK} />
-        <Text style={styles.loadingText}>Cargando perfil de usuario...</Text>
-      </View>
+      <LinearGradient
+        colors={["#070B14", "#0F172A", "#111827"]}
+        style={styles.centered}
+      >
+        <View style={styles.glowTop} />
+        <View style={styles.glowBottom} />
+
+        <BlurView
+          intensity={40}
+          tint="dark"
+          style={styles.loaderCard}
+        >
+          <ActivityIndicator
+            size="large"
+            color="#ef4444"
+          />
+
+          <Text style={styles.loadingText}>
+            Loading user profile...
+          </Text>
+        </BlurView>
+      </LinearGradient>
     );
   }
 
-  const normalizedRole = user.role?.toLowerCase().trim();
+  const normalizedRole =
+    user.role?.toLowerCase().trim();
 
-  // =========================================================================
-  // 1️⃣ FLUJO CLIENTE: Va directo y únicamente al Marketplace (Catálogo)
-  // =========================================================================
+  // =====================================
+  // CLIENTE → MARKETPLACE
+  // =====================================
+
   if (normalizedRole !== "vendedor") {
     return <MarketplaceView />;
   }
 
-  // =========================================================================
-  // 2️⃣ FLUJO VENDEDOR: Panel con pestañas de navegación interna
-  // =========================================================================
-  const renderRoom = ({ item }: { item: Room }) => (
+  // =====================================
+  // ROOM CARD
+  // =====================================
+
+  const renderRoom = ({
+    item,
+  }: {
+    item: Room;
+  }) => (
     <TouchableOpacity
-      style={styles.roomItem}
-      onPress={() => router.push(`/chat/${item.id}`)}
-      activeOpacity={0.7}
+      style={styles.roomWrapper}
+      onPress={() =>
+        router.push(`/chat/${item.id}`)
+      }
+      activeOpacity={0.88}
     >
-      <View style={styles.roomAvatar}>
-        <Text style={styles.roomAvatarText}>
-          {(item.productName ?? "C").charAt(0).toUpperCase()}
-        </Text>
-      </View>
+      <BlurView
+        intensity={35}
+        tint="dark"
+        style={styles.roomCard}
+      >
+        {/* Glow */}
+        <View style={styles.roomGlow} />
 
-      <View style={styles.roomInfo}>
-        <Text style={styles.roomName}>{item.productName}</Text>
-        <Text style={styles.roomDate}>
-          {item.createdAt 
-            ? new Date(item.createdAt).toLocaleDateString("en-US", { 
-                month: "short", 
-                day: "numeric", 
-                year: "numeric" 
-              }) 
-            : ""}
-        </Text>
-      </View>
+        {/* Avatar */}
+        <LinearGradient
+          colors={["#ef4444", "#991b1b"]}
+          style={styles.roomAvatar}
+        >
+          <Text style={styles.roomAvatarText}>
+            {(item.productName ?? "C")
+              .charAt(0)
+              .toUpperCase()}
+          </Text>
+        </LinearGradient>
 
-      <Text style={styles.roomChevron}>›</Text>
+        {/* Info */}
+        <View style={styles.roomInfo}>
+          <Text
+            numberOfLines={1}
+            style={styles.roomName}
+          >
+            {item.productName}
+          </Text>
+
+          <View style={styles.roomMeta}>
+            <ShieldCheck
+              size={12}
+              color="#22c55e"
+            />
+
+            <Text style={styles.roomDate}>
+              {item.createdAt
+                ? new Date(
+                    item.createdAt
+                  ).toLocaleDateString(
+                    "en-US",
+                    {
+                      month: "short",
+                      day: "numeric",
+                    }
+                  )
+                : ""}
+            </Text>
+          </View>
+        </View>
+
+        {/* Chevron */}
+        <View style={styles.chevronContainer}>
+          <Text style={styles.roomChevron}>
+            ›
+          </Text>
+        </View>
+      </BlurView>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      {/* NAVEGACIÓN SUPERIOR EXCLUSIVA VENDEDOR */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabButton, vendedorTab === "chats" && styles.tabButtonActive]}
-          onPress={() => setVendedorTab("chats")}
-        >
-          <Text style={[styles.tabText, vendedorTab === "chats" && styles.tabTextActive]}>
-            Mis Chats ({rooms.length})
-          </Text>
-        </TouchableOpacity>
+    <>
+      <StatusBar barStyle="light-content" />
 
-        <TouchableOpacity
-          style={[styles.tabButton, vendedorTab === "productos" && styles.tabButtonActive]}
-          onPress={() => setVendedorTab("productos")}
-        >
-          <Text style={[styles.tabText, vendedorTab === "productos" && styles.tabTextActive]}>
-            Gestionar Productos
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <LinearGradient
+        colors={["#070B14", "#0F172A", "#111827"]}
+        style={styles.container}
+      >
+        {/* Ambient Glow */}
+        <View style={styles.glowTop} />
+        <View style={styles.glowBottom} />
 
-      {/* RENDERIZADO CONDICIONAL DE CONTENIDO SEGÚN LA PESTAÑA */}
-      {vendedorTab === "productos" ? (
-        // Si elige productos, inyectamos la vista que ya tiene el formulario de creación
-        <MarketplaceView />
-      ) : isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={DARK} />
-          <Text style={styles.loadingText}>Cargando chats...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={rooms}
-          keyExtractor={(r) => r.id}
-          renderItem={renderRoom}
-          contentContainerStyle={rooms.length === 0 ? { flex: 1 } : { paddingBottom: 30 }}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={styles.emptyIcon}>✦</Text>
-              <Text style={styles.emptyTitle}>Bandeja vacía</Text>
-              <Text style={styles.emptySubtitle}>
-                Cuando un cliente pregunte por tus productos publicados, aparecerá en esta lista de inmediato.
+        <SafeAreaView style={styles.safe}>
+          {/* ================================= */}
+          {/* HEADER */}
+          {/* ================================= */}
+
+
+          {/* ================================= */}
+          {/* HERO */}
+          {/* ================================= */}
+
+
+          {/* ================================= */}
+          {/* TABS */}
+          {/* ================================= */}
+
+          <BlurView
+            intensity={30}
+            tint="dark"
+            style={styles.tabsWrapper}
+          >
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                vendedorTab === "chats" &&
+                  styles.tabButtonActive,
+              ]}
+              onPress={() =>
+                setVendedorTab("chats")
+              }
+              activeOpacity={0.85}
+            >
+              <MessageCircle
+                size={16}
+                color={
+                  vendedorTab === "chats"
+                    ? "#fff"
+                    : "#94a3b8"
+                }
+              />
+
+              <Text
+                style={[
+                  styles.tabText,
+                  vendedorTab === "chats" &&
+                    styles.tabTextActive,
+                ]}
+              >
+                Chats
               </Text>
+
+              <View
+                style={[
+                  styles.badge,
+                  vendedorTab === "chats" &&
+                    styles.badgeActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    vendedorTab === "chats" &&
+                      styles.badgeTextActive,
+                  ]}
+                >
+                  {rooms.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                vendedorTab === "productos" &&
+                  styles.tabButtonActive,
+              ]}
+              onPress={() =>
+                setVendedorTab("productos")
+              }
+              activeOpacity={0.85}
+            >
+              <Package
+                size={16}
+                color={
+                  vendedorTab === "productos"
+                    ? "#fff"
+                    : "#94a3b8"
+                }
+              />
+
+              <Text
+                style={[
+                  styles.tabText,
+                  vendedorTab === "productos" &&
+                    styles.tabTextActive,
+                ]}
+              >
+                Products
+              </Text>
+            </TouchableOpacity>
+          </BlurView>
+
+          {/* ================================= */}
+          {/* CONTENT */}
+          {/* ================================= */}
+
+          {vendedorTab === "productos" ? (
+            <MarketplaceView />
+          ) : isLoading ? (
+            <View style={styles.centered}>
+              <BlurView
+                intensity={40}
+                tint="dark"
+                style={styles.loaderCard}
+              >
+                <ActivityIndicator
+                  size="large"
+                  color="#ef4444"
+                />
+
+                <Text style={styles.loadingText}>
+                  Loading chats...
+                </Text>
+              </BlurView>
             </View>
-          }
-        />
-      )}
-    </View>
+          ) : (
+            <FlatList
+              data={rooms}
+              keyExtractor={(r) => r.id}
+              renderItem={renderRoom}
+              showsVerticalScrollIndicator={
+                false
+              }
+              contentContainerStyle={
+                rooms.length === 0
+                  ? styles.emptyContainer
+                  : styles.listContainer
+              }
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 14 }} />
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <LinearGradient
+                    colors={[
+                      "#ef4444",
+                      "#991b1b",
+                    ]}
+                    style={
+                      styles.emptyIconWrapper
+                    }
+                  >
+                    <MessageCircle
+                      size={34}
+                      color="#fff"
+                    />
+                  </LinearGradient>
+
+                  <Text style={styles.emptyTitle}>
+                    No chats yet
+                  </Text>
+
+                  <Text
+                    style={styles.emptySubtitle}
+                  >
+                    When clients contact you
+                    about your products, their
+                    conversations will appear
+                    here automatically.
+                  </Text>
+                </View>
+              }
+            />
+          )}
+        </SafeAreaView>
+      </LinearGradient>
+    </>
   );
 }
 
-// Estilos del contenedor y del Tab Bar
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: GRAY_LIGHT 
+  container: {
+    flex: 1,
+    backgroundColor: "#070B14",
   },
-  tabBar: {
+
+  safe: {
+    flex: 1,
+  },
+
+  glowTop: {
+    position: "absolute",
+    top: -120,
+    right: -80,
+    width: 240,
+    height: 240,
+    borderRadius: 240,
+    backgroundColor:
+      "rgba(239,68,68,0.18)",
+  },
+
+  glowBottom: {
+    position: "absolute",
+    bottom: -120,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 240,
+    backgroundColor:
+      "rgba(59,130,246,0.16)",
+  },
+
+  // =========================
+  // HEADER
+  // =========================
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 12,
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: GRAY_300,
-    paddingTop: 4,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
+
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  headerTitle: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -1,
+  },
+
+  headerSubtitle: {
+    marginTop: 6,
+    color: "#94a3b8",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 2.5,
+  },
+
+  profileCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  profileLetter: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+
+  // =========================
+  // HERO
+  // =========================
+
+  heroCard: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 18,
+    borderRadius: 28,
+    padding: 22,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
+  },
+
+  heroGlow: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor:
+      "rgba(239,68,68,0.15)",
+  },
+
+  heroLabel: {
+    color: "#fca5a5",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginBottom: 12,
+  },
+
+  heroTitle: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "800",
+    lineHeight: 30,
+    letterSpacing: -1,
+  },
+
+  heroText: {
+    marginTop: 12,
+    color: "#94a3b8",
+    fontSize: 14,
+    lineHeight: 22,
+  },
+
+  // =========================
+  // TABS
+  // =========================
+
+  tabsWrapper: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 18,
+    borderRadius: 22,
+    padding: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
+  },
+
   tabButton: {
     flex: 1,
-    paddingVertical: 14,
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    borderBottomWidth: 3,
-    borderBottomColor: "transparent",
-  },
-  tabButtonActive: {
-    borderBottomColor: DARK, // Línea indicadora azul oscura abajo
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: GRAY_MID,
-  },
-  tabTextActive: {
-    color: DARK,
-  },
-  centered: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
     gap: 8,
-    backgroundColor: GRAY_LIGHT
+    paddingVertical: 14,
+    borderRadius: 18,
   },
-  loadingText: { 
-    color: GRAY_MID, 
-    fontSize: 14, 
-    marginTop: 8 
+
+  tabButtonActive: {
+    backgroundColor:
+      "rgba(239,68,68,0.18)",
+    borderWidth: 1,
+    borderColor:
+      "rgba(239,68,68,0.22)",
   },
-  emptyIcon: { 
-    fontSize: 32, 
-    color: GRAY_300, 
-    marginBottom: 8 
+
+  tabText: {
+    color: "#94a3b8",
+    fontSize: 13,
+    fontWeight: "700",
   },
-  emptyTitle: { 
-    fontSize: 18, 
-    fontWeight: "600", 
-    color: DARK 
+
+  tabTextActive: {
+    color: "#fff",
   },
-  emptySubtitle: { 
-    fontSize: 14, 
-    color: GRAY_MID, 
+
+  badge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+
+  badgeActive: {
+    backgroundColor: "#ef4444",
+  },
+
+  badgeText: {
+    color: "#94a3b8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  badgeTextActive: {
+    color: "#fff",
+  },
+
+  // =========================
+  // LIST
+  // =========================
+
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+
+  roomWrapper: {
+    borderRadius: 26,
+    overflow: "hidden",
+  },
+
+  roomCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 18,
+    borderRadius: 26,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
+  },
+
+  roomGlow: {
+    position: "absolute",
+    top: -30,
+    right: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor:
+      "rgba(239,68,68,0.12)",
+  },
+
+  roomAvatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+
+  roomAvatarText: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+
+  roomInfo: {
+    flex: 1,
+  },
+
+  roomName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  roomMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+  },
+
+  roomDate: {
+    color: "#94a3b8",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+
+  chevronContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 14,
+    backgroundColor:
+      "rgba(255,255,255,0.06)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  roomChevron: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "300",
+    marginTop: -2,
+  },
+
+  // =========================
+  // EMPTY
+  // =========================
+
+  emptyContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 30,
+  },
+
+  emptyState: {
+    alignItems: "center",
+  },
+
+  emptyIconWrapper: {
+    width: 92,
+    height: 92,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+
+  emptyTitle: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+
+  emptySubtitle: {
     textAlign: "center",
-    paddingHorizontal: 40 
+    color: "#94a3b8",
+    fontSize: 14,
+    lineHeight: 22,
   },
-  roomItem: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    paddingHorizontal: 20, 
-    paddingVertical: 16, 
-    backgroundColor: "#fff", 
-    gap: 14 
+
+  // =========================
+  // LOADING
+  // =========================
+
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
   },
-  roomAvatar: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 12, 
-    backgroundColor: DARK, 
-    justifyContent: "center", 
-    alignItems: "center" 
+
+  loaderCard: {
+    paddingVertical: 30,
+    paddingHorizontal: 34,
+    borderRadius: 28,
+    alignItems: "center",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
   },
-  roomAvatarText: { 
-    color: "#fff", 
-    fontSize: 18, 
-    fontWeight: "600" 
-  },
-  roomInfo: { 
-    flex: 1 
-  },
-  roomName: { 
-    fontSize: 16, 
-    fontWeight: "600", 
-    color: DARK 
-  },
-  roomDate: { 
-    fontSize: 12, 
-    color: GRAY_MID, 
-    marginTop: 2 
-  },
-  roomChevron: { 
-    fontSize: 22, 
-    color: GRAY_300, 
-    fontWeight: "300" 
-  },
-  separator: { 
-    height: 1, 
-    backgroundColor: GRAY_LIGHT, 
-    marginLeft: 78 
+
+  loadingText: {
+    marginTop: 14,
+    color: "#94a3b8",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

@@ -1,11 +1,9 @@
 // src/features/chat/domain/repositories/IChatRepository.ts
-import { Message } from "../entities/Message"; // Ajusta si tienes tus mensajes aquí
+import { Message } from "../entities/Message";
 import { Room } from "../entities/Room";
-
 export interface IChatRepository {
   getRooms(userId: string, role: string): Promise<Room[]>;
   
-  // 💡 Aquí está la corrección: Añadimos productId
   createRoom(userId: string, productId: string, productName: string): Promise<Room>;
   
   getMessages(roomId: string): Promise<Message[]>;
